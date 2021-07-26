@@ -1,0 +1,5 @@
+[book]
+title = "TiKV Development Guide"
+
+[output.html]
+git-repository-url = "https://github.com/tisonkun/tikv-dev-guide"
