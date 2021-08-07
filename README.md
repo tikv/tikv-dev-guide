@@ -18,4 +18,4 @@ To build the book, type:
 $ mdbook serve
 ```
 
-By default, it will create a server listening on `localhost:3000`, you can open it with a brower to preview the book.
+By default, it will create a server listening on [http://localhost:3000](http://localhost:3000), you can open it with a brower to preview the book.
