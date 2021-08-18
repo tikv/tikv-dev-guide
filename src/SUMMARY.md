@@ -27,7 +27,6 @@
     * [Region](understanding-tikv/scalability/region.md)
     * [Scheduling](understanding-tikv/scalability/scheduling.md)
   * [High Availability](understanding-tikv/high-availability/intro.md)
-    * [Byzantine Failure](understanding-tikv/high-availability/byzantine-failure.md)
     * [Raft](understanding-tikv/high-availability/raft/intro.md)
       * [raft-rs](understanding-tikv/high-availability/raft/raft-rs.md)
       * [Leader Lease](understanding-tikv/high-availability/raft/leader-lease.md)
