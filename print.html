@@ -251,9 +251,27 @@
 </ol>
 <p>In the rest of this chapter, we will talk about <code>Region</code> and <code>Scheduling</code> of TiKV.</p>
 <div id="chapter_begin" style="break-before: page; page-break-before: always;"></div><h1 id="region"><a class="header" href="#region">Region</a></h1>
-<blockquote>
-<p>what is a region, what is split/merge, and the conditions</p>
-</blockquote>
+<p><strong>Sharding</strong> is one of the most necessary characteristic for a storage system to be scalable (or more specifically, <a href="https://en.wikipedia.org/wiki/Scalability">horizontally scalable</a>). By breaking data up into partitions, a storage system can distribute data across computers in the cluster, to fully utilize resource of every single node. Meanwhile, migrate partitions to re-balance computing and storage loads when adding nodes to cluster, to gain performance improvement proportional to the increasing of number of nodes, i.e, to archive <strong>Scalability</strong>.</p>
+<p><img src="understanding-tikv/scalability/../../media/scalability-data-sharding.png" alt="scalability-data-sharding" />
+<em>Diagram 1, Data Sharding [1]</em></p>
+<p>In TiKV, partition is named as <code>Region</code>, which is the data unit to be distributed and migrated among TiKV nodes. Region is also the data unit to be replicated by <a href="https://raft.github.io/">Raft</a>, to archive <a href="understanding-tikv/scalability/../high-availability/intro.html"><strong>High-Availability</strong></a>. A region is likewise a <code>Raft Group</code> in Raft algorithm, composed of one or more <code>Peer</code>s, while a peer is one of the replica of a partition.</p>
+<p><img src="understanding-tikv/scalability/../../media/scalability-region.png" alt="scalability-region" />
+<em>Diagram 2, Region &amp; Replication [1]</em></p>
+<p>How does TiKV split data into regions? As data element of TiKV is key-value pair, we first decide which keys should be put into a region. In general, there are two approaches:</p>
+<ul>
+<li>
+<p>Sharding by hash: splitting by hash of keys (e.g. <a href="https://en.wikipedia.org/wiki/Consistent_hashing">consistent hashing</a>). It is easier to be implemented, as location of keys can be calculated by clients. But it is more difficult to scale up, consistent hashing makes things more complicated, and not efficient to range queries.</p>
+</li>
+<li>
+<p>Sharding by range: splitting by range of keys. It is simple, good for scan, easy to scale by splitting and merging, even can switch to sharding by hash easily. But it needs additional management of metadata of partition.</p>
+</li>
+</ul>
+<p>TiKV splits data by key range. Each region contains a continuous range of keys. The <a href="https://github.com/tikv/pd"><strong>Placement Driver (PD) server</strong></a> stores the <code>[start_key, end_key)</code> and other <a href="https://github.com/pingcap/kvproto/blob/release-5.2/proto/metapb.proto#L64-L76">metadata</a> of each region, and performs the <a href="understanding-tikv/scalability/scheduling.html">scheduling</a> of regions.</p>
+<p>Then, we determine how many key-value pairs should be stored in one region. The size of a region should not be too small, otherwise the management cost of too many regions would be high. Meanwhile, the size should not be too large, or else region migration would be expensive and time-consuming.</p>
+<p>By default, each region is expected to be about 96MB (see <a href="https://docs.pingcap.com/tidb/stable/tikv-configuration-file#region-split-size">region-split-size</a>) in size. Large regions more than 144MB (see <a href="https://docs.pingcap.com/tidb/stable/tikv-configuration-file#region-max-size">region-max-size</a>) will be split into two or more regions with 96MB each. Small adjacent regions less than 20MB (see <a href="https://docs.pingcap.com/tidb/stable/pd-configuration-file#max-merge-region-size">max-merge-region-size</a>) will be merged to one.</p>
+<p>Moreover, each region is expected to contain more or less 960000 (see <a href="https://docs.pingcap.com/tidb/stable/tikv-configuration-file#region-split-keys">region-split-keys</a>) keys, because region size calculation will need to scan all keys in the region. Big regions with more than 1440000 (see <a href="https://docs.pingcap.com/tidb/stable/tikv-configuration-file#region-max-keys">region-max-keys</a>) keys will be split, while regions with more than 200000 (see <a href="https://docs.pingcap.com/tidb/stable/pd-configuration-file#max-merge-region-keys">max-merge-region-keys</a>) keys will <strong>NOT</strong> be merged.</p>
+<h2 id="reference"><a class="header" href="#reference">Reference</a></h2>
+<p>[1] Wenxuan, PingCAP, <a href="https://docs.google.com/presentation/d/1zF7yRiGt643orPHRFjorUfE8ZTTGwEw9Rdxv6mEc3eQ/edit?usp=sharing">&quot;DEEP DIVE TIKV&quot;</a></p>
 <div id="chapter_begin" style="break-before: page; page-break-before: always;"></div><h1 id="scheduling"><a class="header" href="#scheduling">Scheduling</a></h1>
 <p>This section introduces the scheduling mechanism.</p>
 <p>The scheduling mechanism is mainly by summarizing the collected cluster real-time status information (including the heartbeat of the region and the heartbeat of the store), and then judging whether scheduling needs to be generated according to different strategies, and then generate scheduling <code>Operator</code> which is send to TiKV to do scheduling. the <code>Operator</code>struct like:</p>
