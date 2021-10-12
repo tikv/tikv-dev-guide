@@ -2,11 +2,11 @@
 
 ## Why Coprocessor?
 
-TiKV is the distributed key-value storage engine made for TiDB. When TiDB executes a query, basically, it will need to retrieve and scan full rows from TiKV. Consider the following query: 
+TiKV is a distributed key-value storage engine made for TiDB. When TiDB executes a query, basically, it will need to retrieve and scan full rows from TiKV. Consider the following query: 
 
 ![TiKV Distributed Execution](../../media/tikv-distributed-execution.png)
 
-Without something like the TiKV coprocessor, TiDB will need to retrieve all rows from TiKV, then scan and filter them on the TiDB side, even if we only have a single number as the query result. In order to reduce the network traffic for a query, TiDB pushes some execution down to TiKV Coprocessor, which runs queries on the TiKV side.
+Without TiKV coprocessor, TiDB needs to retrieve all rows from TiKV, and then scan and filter them on the TiDB side, even if we only have a single number as the query result. In order to reduce the network traffic for a query, TiDB pushes some computations down to TiKV Coprocessor, which runs queries on the TiKV side.
 
 A TiKV cluster is composed of multiple TiKV nodes, and thus TiKV coprocessor cannot run all queries which TiDB supports. On one side, TiKV itself only holds part of the data which a query needs. Therefore, for an aggregation query, each TiKV node can only calculate partial sums, and TiDB needs to aggregate the partial sums into the final sum. On the other side, TiKV Coprocessor only supports a limited number of executors. Complex operations like join cannot be done on TiKV.
 
@@ -28,7 +28,7 @@ The plan and the data exist in different forms throughout the query execution pr
 
 ## The Plan
 
-When TiDB needs to run a query on TiKV Coprocessor, it will encode the plan in the form of protobuf messages. The schema of the query plan itself is defined in [tipb](https://github.com/pingcap/tipb) repository. Inside tipb, we have all SQL expression supported by TiKV (and TiDB), each with a unique ID, and we define components used by a query, like executors and aggregators.
+When TiDB needs to run a query on TiKV Coprocessor, it will encode the plan in the form of protobuf messages. The schema of the query plan itself is defined in [tipb](https://github.com/pingcap/tipb) repository. Inside tipb, we have all SQL expressions supported by TiKV (and TiDB), each with a unique ID, and we define components used by a query, like executors and aggregators.
 
 The plan is then sent to the gRPC service on the TiKV side, which requires another protobuf schema definition. The definition for that is in the [kvproto](https://github.com/pingcap/kvproto/blob/master/proto/coprocessor.proto) repository. The plan is encoded in the `data` field of the request. Each Coprocessor request will specify the key range (or region) to operate on.
 
@@ -39,7 +39,7 @@ message Request {
     bytes data = 3;
     uint64 start_ts = 7;
     repeated KeyRange ranges = 4;
-		// ...
+    // ...
 }
 ```
 
