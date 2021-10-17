@@ -83,20 +83,4 @@ The executors (will be introduced later) will scan the data from  TxnKV in small
 
 ![TiKV Coprocessor Internals](../../media/inside-copr.png)
 
-### Executors
-
-![TiKV Coprocessor Executors](../../media/copr-executors.png)
-
-### Aggregators
-
-### Expression Framework
-
-#### auto vectorization
-
-#### RPN function
-
-### Other Functionalities
-
-#### Coprocessor v2
-
-#### Analyze Request
+The TiKV Coprocessor contains necessary components to handle a cop read request, which include the expression framework, the aggregators, and the executors. We will cover these parts in the following chapters.
