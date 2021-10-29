@@ -25,17 +25,6 @@ cd tikv
 # Future instructions assume you are in this directory
 ```
 
-### Configuring your Rust toolchain
-
-[`rustup`] is the official toolchain manager for Rust, similar to `rvm` or `rbenv` from the Ruby world.
-
-TiKV is pinned to a version of Rust using a [`rust-toolchain`](https://github.com/tikv/tikv/blob/master/rust-toolchain) file. `rustup` and [`cargo`] will automatically use this file. We also use the [`rustfmt`](https://github.com/rust-lang/rustfmt) and [`clippy`](https://github.com/rust-lang/rust-clippy) components, to install these:
-
-```bash
-rustup component add rustfmt
-rustup component add clippy
-```
-
 ### Building and testing
 
 TiKV includes a [`Makefile`](https://github.com/tikv/tikv/blob/master/Makefile) that has common workflows and sets up a standard build environment. You can also use [`cargo`], as you do in many other Rust projects. To run `cargo` commands in the same environment as the `Makefile` to avoid re-compilations due to environment changes, you can prefix the command with [`scripts/env`](https://github.com/tikv/tikv/blob/master/scripts/env), for example: `./scripts/env cargo build`.
