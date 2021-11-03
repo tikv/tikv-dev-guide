@@ -17,6 +17,8 @@ If you are targeting platforms other than x86_64 linux, you'll also need:
 
 * [`llvm` and `clang`](http://releases.llvm.org/download.html) - Used to generate bindings for different platforms and build native libraries (required for grpcio, rocksdb).
 
+*(Latest version of the above tools should work in most cases. When encountering any trouble of building TiKV, try upgrading to the latest. If it is not helped, do not hesitate to [ask](#ask-for-help).)*
+
 ### Getting the repository
 
 ```
@@ -50,7 +52,7 @@ cargo install cargo-watch
 cargo watch -s "./scripts/env cargo check --all"
 ```
 
-When you're ready to test out your changes, use the `dev` task. It will format your codebase, build with `clippy` enabled, and run tests. In most case, this should be done without any failure before you create a Pull Request. Unfortunately, some tests will fail intermittently or can not pass on your platform. If you're unsure, just ask!
+When you're ready to test out your changes, use the `dev` task. It will format your codebase, build with `clippy` enabled, and run tests. In most case, this should be done without any failure before you create a Pull Request. Unfortunately, some tests will fail intermittently or can not pass on your platform. If you're unsure, just [ask](#ask-for-help)!
 
 ```bash
 make dev
@@ -86,6 +88,10 @@ To reduce compilation time, TiKV builds do not include full debugging informatio
 RUSTFLAGS=-Cdebuginfo=2 make dev
 RUSTFLAGS=-Cdebuginfo=2 ./scripts/env cargo build
 ```
+
+### Ask for help
+If you encounter any problem during your journey, do not hesitate to reach out on the [TiDB Internals forum](https://internals.tidb.io/).
+
 
 [`rustup`]: https://rustup.rs/
 [`cargo`]: https://doc.rust-lang.org/cargo/
