@@ -91,8 +91,6 @@ RUSTFLAGS=-Cdebuginfo=2 ./scripts/env cargo build
 
 ### Ask for help
 If you encounter any problem during your journey, do not hesitate to reach out on the [TiDB Internals forum](https://internals.tidb.io/).
-
-
 [`rustup`]: https://rustup.rs/
 [`cargo`]: https://doc.rust-lang.org/cargo/
 [gRPC]: https://github.com/grpc/grpc
