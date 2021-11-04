@@ -181,6 +181,69 @@
 </ol>
 <div id="chapter_begin" style="break-before: page; page-break-before: always;"></div><h1 id="get-started"><a class="header" href="#get-started">Get Started</a></h1>
 <div id="chapter_begin" style="break-before: page; page-break-before: always;"></div><h1 id="build-tikv-from-source"><a class="header" href="#build-tikv-from-source">Build TiKV from Source</a></h1>
+<p>TiKV is mostly written in Rust, and has components written in C++ (RocksDB, gRPC). We are currently using the Rust <a href="https://rust-lang.github.io/rustup/concepts/toolchains.html">nightly toolchain</a>. To provide consistency, we use linters and automated formatting tools.</p>
+<h3 id="prerequisites"><a class="header" href="#prerequisites">Prerequisites</a></h3>
+<p>To build TiKV you'll need to at least have the following installed:</p>
+<ul>
+<li><a href="https://git-scm.com/"><code>git</code></a> - Version control</li>
+<li>[<code>rustup</code>] - Rust installer and toolchain manager</li>
+<li><a href="https://www.gnu.org/software/make/"><code>make</code></a> - Build tool (run common workflows)</li>
+<li><a href="https://cmake.org/"><code>cmake</code></a> - Build tool (required for [gRPC])</li>
+<li><a href="https://www.gnu.org/software/gawk/manual/gawk.html"><code>awk</code></a> - Pattern scanning/processing language</li>
+<li>C++ compiler - <a href="https://gcc.gnu.org/"><code>gcc</code></a> 4.9+ (required for [gRPC])</li>
+</ul>
+<p>If you are targeting platforms other than x86_64 linux, you'll also need:</p>
+<ul>
+<li><a href="http://releases.llvm.org/download.html"><code>llvm</code> and <code>clang</code></a> - Used to generate bindings for different platforms and build native libraries (required for grpcio, rocksdb).</li>
+</ul>
+<p><em>(Latest version of the above tools should work in most cases. When encountering any trouble of building TiKV, try upgrading to the latest. If it is not helped, do not hesitate to <a href="get-started/build-tikv-from-source.html#ask-for-help">ask</a>.)</em></p>
+<h3 id="getting-the-repository"><a class="header" href="#getting-the-repository">Getting the repository</a></h3>
+<pre><code>git clone https://github.com/tikv/tikv.git
+cd tikv
+# Future instructions assume you are in this directory
+</code></pre>
+<h3 id="building-and-testing"><a class="header" href="#building-and-testing">Building and testing</a></h3>
+<p>TiKV includes a <a href="https://github.com/tikv/tikv/blob/master/Makefile"><code>Makefile</code></a> that has common workflows and sets up a standard build environment. You can also use [<code>cargo</code>], as you do in many other Rust projects. To run <code>cargo</code> commands in the same environment as the <code>Makefile</code> to avoid re-compilations due to environment changes, you can prefix the command with <a href="https://github.com/tikv/tikv/blob/master/scripts/env"><code>scripts/env</code></a>, for example: <code>./scripts/env cargo build</code>.</p>
+<p>Furthermore, when building by <code>make</code>, <code>cargo</code> is configured to use <a href="https://internals.rust-lang.org/t/evaluating-pipelined-rustc-compilation/10199">pipelined compilation</a> to increase the parallelism of the build. To turn on pipelining while using <code>cargo</code> directly, set environment variable <code>export CARGO_BUILD_PIPELINING=true</code>.</p>
+<p>To build TiKV:</p>
+<pre><code class="language-bash">make build
+</code></pre>
+<p>During interactive development, you may prefer using <code>cargo check</code>, which will parse, do borrow check, and lint your code, but not actually compile it:</p>
+<pre><code class="language-bash">./scripts/env cargo check --all
+</code></pre>
+<p>It is particularly handy alongside <code>cargo-watch</code>, which runs a command each time you change a file.</p>
+<pre><code class="language-bash">cargo install cargo-watch
+cargo watch -s &quot;./scripts/env cargo check --all&quot;
+</code></pre>
+<p>When you're ready to test out your changes, use the <code>dev</code> task. It will format your codebase, build with <code>clippy</code> enabled, and run tests. In most case, this should be done without any failure before you create a Pull Request. Unfortunately, some tests will fail intermittently or can not pass on your platform. If you're unsure, just <a href="get-started/build-tikv-from-source.html#ask-for-help">ask</a>!</p>
+<pre><code class="language-bash">make dev
+</code></pre>
+<p>You can run the test suite alone, or just run a specific test:</p>
+<pre><code class="language-bash"># Run the full suite
+make test
+# Run a specific test
+./scripts/test $TESTNAME -- --nocapture
+</code></pre>
+<p>TiKV follows the Rust community coding style. We use <a href="https://github.com/rust-lang/rustfmt">rustfmt</a> and <a href="https://github.com/rust-lang/rust-clippy">clippy</a> to automatically format and lint our codes. Using these tools is included in our CI. They are also part of <code>make dev</code>, and you can run them alone:</p>
+<pre><code class="language-bash"># Run Rustfmt
+make format
+# Run Clippy (note that some lints are ignored, so `cargo clippy` will give many false positives)
+make clippy
+</code></pre>
+<p>See the <a href="https://github.com/rust-lang/rfcs/blob/master/style-guide/README.md">Rust Style Guide</a> and the <a href="https://rust-lang-nursery.github.io/api-guidelines/">Rust API Guidelines</a> for details on the conventions.</p>
+<p>Please follow this style to make TiKV easy to review, maintain, and develop.</p>
+<h3 id="build-for-debugging"><a class="header" href="#build-for-debugging">Build for Debugging</a></h3>
+<p>To reduce compilation time, TiKV builds do not include full debugging information by default — <code>release</code> and <code>bench</code> builds include no debuginfo; <code>dev</code> and <code>test</code> builds include line numbers only. The easiest way to enable debuginfo is to precede build commands with <code>RUSTFLAGS=-Cdebuginfo=1</code> (for line numbers), or <code>RUSTFLAGS=-Cdebuginfo=2</code> (for full debuginfo). For example,</p>
+<pre><code class="language-bash">RUSTFLAGS=-Cdebuginfo=2 make dev
+RUSTFLAGS=-Cdebuginfo=2 ./scripts/env cargo build
+</code></pre>
+<h3 id="ask-for-help"><a class="header" href="#ask-for-help">Ask for help</a></h3>
+<p>If you encounter any problem during your journey, do not hesitate to reach out on the <a href="https://internals.tidb.io/">TiDB Internals forum</a>.
+[<code>rustup</code>]: https://rustup.rs/
+[<code>cargo</code>]: https://doc.rust-lang.org/cargo/
+[gRPC]: https://github.com/grpc/grpc
+[rustfmt]: https://github.com/rust-lang/rustfmt
+[clippy]: https://github.com/rust-lang/rust-clippy</p>
 <div id="chapter_begin" style="break-before: page; page-break-before: always;"></div><h1 id="import-tikv-into-an-ide"><a class="header" href="#import-tikv-into-an-ide">Import TiKV into an IDE</a></h1>
 <div id="chapter_begin" style="break-before: page; page-break-before: always;"></div><h1 id="write-and-run-unit-tests"><a class="header" href="#write-and-run-unit-tests">Write and Run Unit Tests</a></h1>
 <div id="chapter_begin" style="break-before: page; page-break-before: always;"></div><h1 id="debug-and-profile"><a class="header" href="#debug-and-profile">Debug and Profile</a></h1>
