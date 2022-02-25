@@ -27,7 +27,7 @@ Firstly, we can get the binary file with cargo command, like:
 ```bash
 cargo test tikv test_raw_get_key_ttl
 ```
-We can see the binary file is \${TIKV_SOURCE_CODE}/target/debug/deps/tikv-4a32c89a00a366cb(The file name is depends).
+A binary file located in `target/debug/deps/tikv-some-hash` will be produced.
 
 2. Debug the binary with rust-gdb:
 
