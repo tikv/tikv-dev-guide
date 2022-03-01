@@ -54,9 +54,8 @@ rust-gdb --args target/debug/deps/tikv-4a32c89a00a366cb test_raw_get_key_ttl
 ```bash
 TIKV_BIN=~/tikv/target/release/tikv-server
 
-tiup playground v5.0.4 --host 0.0.0.0 --db 0 --tag clst01 \
-  --kv 3 --kv.binpath ${TIKV_BIN} --kv.config ~/cluster_config/tikv.toml \
-  --pd 1 --pd.config ~/cluster_config/pd.toml
+tiup playground v5.0.4 --mode tikv-slim 
+  --kv 3 --kv.binpath ${TIKV_BIN} --kv.config ./tikv_rawkv.toml
 ```
 
 4. Now we get one TiKV cluster with three TiKV virtual nodes and one pd node. we can use rust-gdb to attach the tikv-server process.
