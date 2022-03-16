@@ -5,11 +5,15 @@ In previous chapter, we introduce how to build TiKV from source, and in this cha
 ## Prerequisites
 
 * rust-gdb or rust-lldb  
-rust-gdb and rust-lldb are installed in rust. But lldb is not installed by default. So if you want to use rust-lldb, please install lldb firstly.  
-rust-gdb is an enhanced tools based on gdb for rust programming, and the usage is almost the same with gdb, if you want to learn more about gdb, please see [GDB](https://www.sourceware.org/gdb/).  
+[GDB](https://www.sourceware.org/gdb) and [LLDB](https://lldb.llvm.org/) are common used for debugging a program.  
+    * GDB, the GNU Project debugger, allows you to see what is going on `inside' another program while it executes.
+    * LLDB is a next generation, high-performance debugger. It is built as a set of reusable components which highly leverage existing libraries in the larger LLVM Project, such as the Clang expression parser and LLVM disassembler.  
+    * rust-gdb and rust-lldb are installed in rust. But lldb is not installed by default. So if you want to use rust-lldb, please install lldb firstly.
 
+rust-gdb/rust-lldb is an enhanced tools based on gdb/lldb for rust programming, and the usage is almost the same with gdb/lldb. About how to choose betwen rust-gdb and rust-lldb, it depends on the platform you are using and the familiarity of these tools. If you are 
+new hand on the debugging tools, rust-lldb is recommended on MacOS and rust-gdb is recommended on Linux, like Ubuntu and CentOS. 
 * perf  
-Perf is common Linux profiler. It's powerful: it can instrument CPU performance counters, tracepoints, kprobes, and uprobes (dynamic tracing). It can be installed as following:
+[Perf](https://perf.wiki.kernel.org/index.php/Main_Page) is common Linux profiler. It's powerful: it can instrument CPU performance counters, tracepoints, kprobes, and uprobes (dynamic tracing). It can be installed as following:
 ```bash
 Ubuntu: sudo apt-get install linux-tools
 CentOS: sudo yum install perf
@@ -25,7 +29,7 @@ CentOS: sudo yum install perf
 
 Firstly, we can get the binary file with cargo command, like: 
 ```bash
-cargo test tikv test_raw_get_key_ttl
+cargo test -p tikv test_raw_get_key_ttl
 ```
 A binary file located in `target/debug/deps/tikv-some-hash` will be produced.
 
@@ -48,7 +52,7 @@ rust-gdb --args target/debug/deps/tikv-4a32c89a00a366cb test_raw_get_key_ttl
 ### Debug TiKV cluster with specified tikv-server binary
 
 1. Build tikv-server binary with the guide in [previous chapter](./build-tikv-from-source.md).
-2. The binary files are in \${TIKV_SOURCE_CODE}/target/debug/, we can also get one release mode binary with make release, and the binary is in \${TIKV_SOURCE_CODE}/target/release/.
+2. The binary files are in \${TIKV_SOURCE_CODE}/target/debug/, we can also get one release mode binary with `make release`, and the binary is in \${TIKV_SOURCE_CODE}/target/release/.
 3. TiUP is recommanded to deploy a TiKV cluster. It's easy to deploy a local TiKV cluster with tiup playground. Please refer [Get start in 5 minutes](https://tikv.org/docs/5.1/concepts/tikv-in-5-minutes/#set-up-a-local-tikv-cluster-with-the-default-options). With TiUP, we can also specify the tikv-server binary file during deploy. The following is an emxample:
 
 ```bash
@@ -81,8 +85,3 @@ perf record -g -p `pidof tikv-server`
 
 perf report
 ```
-## Monitor TiKV cluster
-
-Prometheus and Grafana are used to monitor and alert the TiKV cluster. Please ref [TiKV website](https://tikv.org/docs/5.1/deploy/monitor/deploy/#configure-grafana).
-
-
