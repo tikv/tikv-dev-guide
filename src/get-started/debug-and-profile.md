@@ -5,12 +5,15 @@ In previous chapter, we introduce how to build TiKV from source, and in this cha
 ## Prerequisites
 
 * rust-gdb or rust-lldb  
-[GDB](https://www.sourceware.org/gdb) and [LLDB](https://lldb.llvm.org/) are common used for debugging a program.  
-    * GDB, the GNU Project debugger, allows you to see what is going on `inside' another program while it executes.
-    * LLDB is a next generation, high-performance debugger. It is built as a set of reusable components which highly leverage existing libraries in the larger LLVM Project, such as the Clang expression parser and LLVM disassembler.  
-    * rust-gdb and rust-lldb are installed in rust. But lldb is not installed by default. So if you want to use rust-lldb, please install lldb firstly.
-
-    rust-gdb/rust-lldb is an enhanced tools based on gdb/lldb for rust programming, and the usage is almost the same with gdb/lldb. About how to choose betwen rust-gdb and rust-lldb, it depends on the platform you are using and the familiarity of these tools. If you are new hand on the debugging tools, rust-lldb is recommended on MacOS and rust-gdb is recommended on Linux, like Ubuntu and CentOS. 
+[GDB](https://www.sourceware.org/gdb) and [LLDB](https://lldb.llvm.org/) are commonly used for debugging a program.  
+    * `rust-gdb` and `rust-lldb` are both installed with `rustc` together, however, they depend on `gdb` and `lldb`, which are need be installed by yourself. Here is the installation of gdb/lldb.
+    ```bash
+    Ubuntu: sudo apt-get install gdb/lldb
+    CentOS: sudo yum install gdb/lldb
+    ```
+    * `gdb` and `lldb` can also be used to debug rust program.
+    * Basically, `rust-gdb` is a wrapper that loads external Python pretty-printing scripts into GDB. This is useful (and somewhat necessary) when debugging more complex Rust programs because it significantly improves the display of Rust data types. `rust-lldb` is similar. So `rust-gdb` and `rust-lldb` are recommended.
+    * About how to choose between `rust-gdb` and `rust-lldb`, it depends on the platform you are using and the familiarity of these tools. If you are new hand on the debugging tools, `rust-lldb` is recommended on MacOS and `rust-gdb` is recommended on Linux, like Ubuntu and CentOS. 
 * perf  
 [Perf](https://perf.wiki.kernel.org/index.php/Main_Page) is common Linux profiler. It's powerful: it can instrument CPU performance counters, tracepoints, kprobes, and uprobes (dynamic tracing). It can be installed as following:
 ```bash
@@ -20,7 +23,7 @@ CentOS: sudo yum install perf
 
 *For simplicity, we will introduce the debugging with rust-gdb, audience can also use rust-lldb.*
 
-## Debug TiKV with GDB
+## Debug TiKV with rust-gdb
 
 ### Debug a unit test binary in TiKV
 
@@ -58,13 +61,13 @@ rust-gdb --args target/debug/deps/tikv-<somehash> test_raw_batch_get
 
 ![gdb-tikv-ut](../media/gdb_tikv_ut.png)
 
-As the marks shown in above picture, Firstly, a breakpoint is set in line `4650` of file `src/storage/mod.rs` and set condition that `api_version == 2`, which means program only pause when it hit here and the variable `api_version` is equals to 2. Then `run` is executed and the proram start to run. The following steps are some examples to use gdb commands to execute the `step over` and `print`.
+As the marks shown in above picture, Firstly, a breakpoint is set in line `4650` of file `src/storage/mod.rs` and set condition that `api_version == 2`, which means program only pause when it hit here and the variable `api_version` is equals to 2. Then `run` is executed and the program start to run. The following steps are some examples to use gdb commands to execute the `step over` and `print`.
 
 ### Debug TiKV cluster with specified tikv-server binary
 
 1. Build tikv-server binary with the guide in [previous chapter](./build-tikv-from-source.md).
-2. The binary files are in \${TIKV_SOURCE_CODE}/target/debug/, we can also get one release mode binary with `make release`, and the binary is in \${TIKV_SOURCE_CODE}/target/release/.
-3. TiUP is recommanded to deploy a TiKV cluster. It's easy to deploy a local TiKV cluster with tiup playground. Please refer [Get start in 5 minutes](https://tikv.org/docs/5.1/concepts/tikv-in-5-minutes/#set-up-a-local-tikv-cluster-with-the-default-options). With TiUP, we can also specify the tikv-server binary file during deploy. The following is an emxample:
+2. The binary files are in \${TIKV_SOURCE_CODE}/target/debug/, debug binary is recommended as it keep much useful debug info, such as codes, lines, local variables.
+3. TiUP is recommended to deploy a TiKV cluster. It's easy to deploy a local TiKV cluster with tiup playground. Please refer [Get start in 5 minutes](https://tikv.org/docs/5.1/concepts/tikv-in-5-minutes/#set-up-a-local-tikv-cluster-with-the-default-options). With TiUP, we can also specify the tikv-server binary file during deploy. The following is an example:
 
 ```bash
 TIKV_BIN=~/tikv/target/release/tikv-server
@@ -79,7 +82,7 @@ tiup playground v5.0.4 --mode tikv-slim
 rust-gdb attach ${PID}
 ```
 
-pid of tikv-server can be abtained with following command:
+pid of tikv-server can be obtained with the following command:
 
 ```bash
 ps -aux|grep tikv-server
@@ -97,10 +100,10 @@ perf record -g -p `pidof tikv-server`
 perf report
 ```
 
-An profile file is gnerated and we can see the cpu usage during perf recording.
+A profile file is generated and we can see the CPU usage during perf recording.
 
 Another example is generating the flame graph with perf and [FlameGraph](http://www.brendangregg.com/flamegraphs.html) tools. 
-1. Firstly, download the FlageGraph code.
+1. Firstly, download the FlameGraph code.
 ```
 git clone https://github.com/brendangregg/FlameGraph.git
 ```
@@ -120,4 +123,4 @@ perf script -i perf.data &> perf.unfold
 ```
 5. We can open the `svg` file with `chrome` or other browsers. With the flame graph, we can see the performance data more intuitively.
 
-![flame_grapha](../media/perf_flame.png)
+![flame_graph](../media/perf_flame.png)
