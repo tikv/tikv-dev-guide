@@ -6,7 +6,7 @@ In previous chapter, we introduce how to build TiKV from source, and in this cha
 
 * rust-gdb or rust-lldb  
 [GDB](https://www.sourceware.org/gdb) and [LLDB](https://lldb.llvm.org/) are commonly used for debugging a program.  
-    * `rust-gdb` and `rust-lldb` are both installed with `rustc` together, however, they depend on `gdb` and `lldb`, which are need be installed by yourself. Here is the installation of gdb/lldb.
+    * `rust-gdb` and `rust-lldb` are both installed with `rustup` together, however, they depend on `gdb` and `lldb`, which are need be installed by yourself. Here is the installation of gdb/lldb.
     ```bash
     Ubuntu: sudo apt-get install gdb/lldb
     CentOS: sudo yum install gdb/lldb
