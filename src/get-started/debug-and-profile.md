@@ -10,8 +10,7 @@ In previous chapter, we introduce how to build TiKV from source, and in this cha
     * LLDB is a next generation, high-performance debugger. It is built as a set of reusable components which highly leverage existing libraries in the larger LLVM Project, such as the Clang expression parser and LLVM disassembler.  
     * rust-gdb and rust-lldb are installed in rust. But lldb is not installed by default. So if you want to use rust-lldb, please install lldb firstly.
 
-rust-gdb/rust-lldb is an enhanced tools based on gdb/lldb for rust programming, and the usage is almost the same with gdb/lldb. About how to choose betwen rust-gdb and rust-lldb, it depends on the platform you are using and the familiarity of these tools. If you are 
-new hand on the debugging tools, rust-lldb is recommended on MacOS and rust-gdb is recommended on Linux, like Ubuntu and CentOS. 
+    rust-gdb/rust-lldb is an enhanced tools based on gdb/lldb for rust programming, and the usage is almost the same with gdb/lldb. About how to choose betwen rust-gdb and rust-lldb, it depends on the platform you are using and the familiarity of these tools. If you are new hand on the debugging tools, rust-lldb is recommended on MacOS and rust-gdb is recommended on Linux, like Ubuntu and CentOS. 
 * perf  
 [Perf](https://perf.wiki.kernel.org/index.php/Main_Page) is common Linux profiler. It's powerful: it can instrument CPU performance counters, tracepoints, kprobes, and uprobes (dynamic tracing). It can be installed as following:
 ```bash
@@ -21,7 +20,7 @@ CentOS: sudo yum install perf
 
 *For simplicity, we will introduce the debugging with rust-gdb, audience can also use rust-lldb.*
 
-## Running TiKV with GDB
+## Debug TiKV with GDB
 
 ### Debug a unit test binary in TiKV
 
@@ -38,16 +37,28 @@ A binary file located in `target/debug/deps/tikv-some-hash` will be produced.
 ```bash
 rust-gdb --args target/debug/deps/tikv-4a32c89a00a366cb test_raw_get_key_ttl
 ```
-3. Now the standard gdb interface is shown. We can debug the unit test with gdb command. Here are some simple usage examples.
+3. Now the standard gdb interface is shown. We can debug the unit test with gdb command. Here are some simple commands.
 
 * r(run) to start the program.
 * b(break) file_name:line_number to set a breakpoint.
 * p(print) args to print args.
 * ls to show the surrounding codes of breakpoint.
 * s(step) to step in the function.
-* n(next) to step to next line.
+* n(next) to step over current line.
 * c(continue) to continue the program.
 * watch to set a data watch breakpoint.
+
+An example to deug an unit test named `test_raw_batch_get` is as following:
+* build `tikv` unit test binary with `cargo test -p tikv test_raw_batch_get` and binary is located in `target/debug/deps/tikv-<somehash>`
+* launch the binary with rust-gdb
+```
+rust-gdb --args target/debug/deps/tikv-<somehash> test_raw_batch_get
+```
+* debug 
+
+![gdb-tikv-ut](../media/gdb_tikv_ut.png)
+
+As the marks shown in above picture, Firstly, a breakpoint is set in line `4650` of file `src/storage/mod.rs` and set condition that `api_version == 2`, which means program only pause when it hit here and the variable `api_version` is equals to 2. Then `run` is executed and the proram start to run. The following steps are some examples to use gdb commands to execute the `step over` and `print`.
 
 ### Debug TiKV cluster with specified tikv-server binary
 
@@ -85,3 +96,28 @@ perf record -g -p `pidof tikv-server`
 
 perf report
 ```
+
+An profile file is gnerated and we can see the cpu usage during perf recording.
+
+Another example is generating the flame graph with perf and [FlameGraph](http://www.brendangregg.com/flamegraphs.html) tools. 
+1. Firstly, download the FlageGraph code.
+```
+git clone https://github.com/brendangregg/FlameGraph.git
+```
+2. Recording performance data with `perf`
+```
+perf record -g -p `pidof tikv-server`
+```
+3. Parse the perf data with script.
+```
+perf script -i perf.data &> perf.unfold
+```
+4. generate the flame graph
+```
+./stackcollapse-perf.pl perf.unfold &> perf.folded
+
+./flamegraph.pl perf.folded > perf.svg
+```
+5. We can open the `svg` file with `chrome` or other browsers. With the flame graph, we can see the performance data more intuitively.
+
+![flame_grapha](../media/perf_flame.png)
