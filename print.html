@@ -247,6 +247,120 @@ RUSTFLAGS=-Cdebuginfo=2 ./scripts/env cargo build
 <div id="chapter_begin" style="break-before: page; page-break-before: always;"></div><h1 id="import-tikv-into-an-ide"><a class="header" href="#import-tikv-into-an-ide">Import TiKV into an IDE</a></h1>
 <div id="chapter_begin" style="break-before: page; page-break-before: always;"></div><h1 id="write-and-run-unit-tests"><a class="header" href="#write-and-run-unit-tests">Write and Run Unit Tests</a></h1>
 <div id="chapter_begin" style="break-before: page; page-break-before: always;"></div><h1 id="debug-and-profile"><a class="header" href="#debug-and-profile">Debug and Profile</a></h1>
+<p>In previous chapter, we introduce how to build TiKV from source, and in this chapter, we will focus on how to debug and profile TiKV from the view of a developer.</p>
+<h2 id="prerequisites-1"><a class="header" href="#prerequisites-1">Prerequisites</a></h2>
+<ul>
+<li>rust-gdb or rust-lldb<br />
+<a href="https://www.sourceware.org/gdb">GDB</a> and <a href="https://lldb.llvm.org/">LLDB</a> are commonly used for debugging a program.
+<ul>
+<li><code>rust-gdb</code> and <code>rust-lldb</code> are both installed with <code>rustup</code> together, however, they depend on <code>GDB</code> and <code>LLDB</code>, which are need to be installed by yourself. Here is the installation of GDB/LLDB.</li>
+</ul>
+<pre><code class="language-bash">Ubuntu: sudo apt-get install gdb/lldb
+CentOS: sudo yum install gdb/lldb
+</code></pre>
+<ul>
+<li><code>GDB</code> and <code>LLDB</code> can also be used to debug rust program.</li>
+<li>Basically, <code>rust-gdb</code> is a wrapper that loads external Python pretty-printing scripts into GDB. This is useful (and somewhat necessary) when debugging more complex Rust programs because it significantly improves the display of Rust data types. <code>rust-lldb</code> is similar. So <code>rust-gdb</code> and <code>rust-lldb</code> are recommended.</li>
+<li>About how to choose between <code>rust-gdb</code> and <code>rust-lldb</code>, it depends on the platform you are using and the familiarity of these tools. If you are new hand on the debugging tools, <code>rust-lldb</code> is recommended on MacOS and <code>rust-gdb</code> is recommended on Linux, like Ubuntu and CentOS. </li>
+</ul>
+</li>
+<li>perf<br />
+<a href="https://perf.wiki.kernel.org/index.php/Main_Page">Perf</a> is common Linux profiler. It's powerful: it can instrument CPU performance counters, tracepoints, kprobes, and uprobes (dynamic tracing). It can be installed as following:</li>
+</ul>
+<pre><code class="language-bash">Ubuntu: sudo apt-get install linux-tools
+CentOS: sudo yum install perf
+</code></pre>
+<p><em>For simplicity, we will introduce the debugging with rust-gdb, audience can also use rust-lldb.</em></p>
+<h2 id="debug-tikv-with-rust-gdb"><a class="header" href="#debug-tikv-with-rust-gdb">Debug TiKV with rust-gdb</a></h2>
+<h3 id="debug-a-unit-test-binary-in-tikv"><a class="header" href="#debug-a-unit-test-binary-in-tikv">Debug a unit test binary in TiKV</a></h3>
+<ol>
+<li>Build the unit test binary, for example we want to debug the test case: <a href="https://github.com/tikv/tikv/blob/a7d1595f5486616be34e0cf2bbf372edb5f0e85a/src/storage/mod.rs#L5352-L5356">test_raw_get_key_ttl</a></li>
+</ol>
+<p>Firstly, we can get the binary file with cargo command, like: </p>
+<pre><code class="language-bash">cargo test -p tikv test_raw_get_key_ttl
+</code></pre>
+<p>A binary file located in <code>target/debug/deps/tikv-some-hash</code> will be produced.</p>
+<ol start="2">
+<li>Debug the binary with rust-gdb:</li>
+</ol>
+<pre><code class="language-bash">rust-gdb --args target/debug/deps/tikv-4a32c89a00a366cb test_raw_get_key_ttl
+</code></pre>
+<ol start="3">
+<li>Now the standard gdb interface is shown. We can debug the unit test with gdb command. Here are some simple commands.</li>
+</ol>
+<ul>
+<li>r(run) to start the program.</li>
+<li>b(break) file_name:line_number to set a breakpoint.</li>
+<li>p(print) args to print args.</li>
+<li>ls to show the surrounding codes of breakpoint.</li>
+<li>s(step) to step in the function.</li>
+<li>n(next) to step over current line.</li>
+<li>c(continue) to continue the program.</li>
+<li>watch to set a data watch breakpoint.</li>
+</ul>
+<p>An example of debugging an unit test named <code>test_raw_batch_get</code> is as following:</p>
+<ul>
+<li>Build <code>tikv</code> unit test binary with <code>cargo test -p tikv test_raw_batch_get</code> and binary is located in <code>target/debug/deps/tikv-&lt;somehash&gt;</code></li>
+<li>Launch the binary with <code>rust-gdb</code></li>
+</ul>
+<pre><code>rust-gdb --args target/debug/deps/tikv-&lt;somehash&gt; test_raw_batch_get
+</code></pre>
+<ul>
+<li>debug </li>
+</ul>
+<p><img src="get-started/../media/gdb_tikv_ut.png" alt="gdb-tikv-ut" /></p>
+<p>As the marks shown in above screenshot, firstly, a breakpoint is set in line <code>4650</code> of file <code>src/storage/mod.rs</code> and set condition that <code>api_version == 2</code>, which means program only pause when it hit here and the variable <code>api_version</code> is equals to 2. Then <code>run</code> is executed and the program start to run. The following steps are some examples to use gdb commands to execute the <code>step over</code> and <code>print</code>.</p>
+<h3 id="debug-tikv-cluster-with-specified-tikv-server-binary"><a class="header" href="#debug-tikv-cluster-with-specified-tikv-server-binary">Debug TiKV cluster with specified tikv-server binary</a></h3>
+<ol>
+<li>Build tikv-server binary with the guide in <a href="get-started/./build-tikv-from-source.html">previous chapter</a>.</li>
+<li>The binary files are located in <code>\${TIKV_SOURCE_CODE}/target/debug/tikv-server</code>. Debug binary is recommended as it keep much useful debug info, such as codes, lines, local variables.</li>
+<li>TiUP is recommended to deploy a TiKV cluster. It's easy to deploy a local TiKV cluster with tiup playground. Please refer to <a href="https://tikv.org/docs/5.1/concepts/tikv-in-5-minutes/#set-up-a-local-tikv-cluster-with-the-default-options">Get start in 5 minutes</a>. With TiUP, we can also specify the tikv-server binary file during deploy. The following is an example:</li>
+</ol>
+<pre><code class="language-bash">TIKV_BIN=~/tikv/target/release/tikv-server
+
+tiup playground v5.0.4 --mode tikv-slim 
+  --kv 3 --kv.binpath ${TIKV_BIN} --kv.config ./tikv_rawkv.toml
+</code></pre>
+<ol start="4">
+<li>Now we get one TiKV cluster with three TiKV virtual nodes and one PD node. we can use <code>rust-gdb</code> to attach the <code>tikv-server</code> process.</li>
+</ol>
+<pre><code class="language-bash">rust-gdb attach `pid of tikv-server`
+</code></pre>
+<p>pid of tikv-server can be obtained with the following command:</p>
+<pre><code class="language-bash">ps -aux|grep tikv-server
+</code></pre>
+<p>Now the standard GDB interface is shown. The following steps are just the same as debugging unit test binary.</p>
+<h2 id="profiling-tikv"><a class="header" href="#profiling-tikv">Profiling TiKV</a></h2>
+<p>When we want to find the CPU bottleneck of one program, we can use <a href="https://www.brendangregg.com/perf.html">perf Linux profiler</a> to find the procedures and how much CPU time they are consuming. It can also be used for profiling TiKV. <a href="http://www.brendangregg.com/flamegraphs.html">FlameGraph</a> can also be used to visualize stack traces with interactive SVGs. FlameGraph can be downloaded from here: </p>
+<pre><code>git clone https://github.com/brendangregg/FlameGraph.git
+</code></pre>
+<p>Here is one example:</p>
+<ol>
+<li>Recording performance data with <code>perf</code></li>
+</ol>
+<pre><code>perf record -g -p `pidof tikv-server`
+</code></pre>
+<ol start="2">
+<li>Generate text report</li>
+</ol>
+<pre><code>perf report
+</code></pre>
+<ol start="3">
+<li>Parse the perf data with script.</li>
+</ol>
+<pre><code>perf script -i perf.data &amp;&gt; perf.unfold
+</code></pre>
+<ol start="4">
+<li>Generate the flame graph</li>
+</ol>
+<pre><code>./stackcollapse-perf.pl perf.unfold &amp;&gt; perf.folded
+
+./flamegraph.pl perf.folded &gt; perf.svg
+</code></pre>
+<ol start="5">
+<li>We can open the <code>svg</code> file with <code>Chrome</code> or other browsers. With the flame graph, we can see the performance data more intuitively.</li>
+</ol>
+<p><img src="get-started/../media/perf_flame.png" alt="flame_graph" /></p>
 <div id="chapter_begin" style="break-before: page; page-break-before: always;"></div><h1 id="submit-a-pull-request"><a class="header" href="#submit-a-pull-request">Submit a Pull Request</a></h1>
 <div id="chapter_begin" style="break-before: page; page-break-before: always;"></div><h1 id="contribute-to-tikv"><a class="header" href="#contribute-to-tikv">Contribute to TiKV</a></h1>
 <div id="chapter_begin" style="break-before: page; page-break-before: always;"></div><h1 id="community-guideline"><a class="header" href="#community-guideline">Community Guideline</a></h1>
