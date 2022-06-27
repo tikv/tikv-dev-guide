@@ -1,6 +1,8 @@
 # Summary
 
-* [TiKV Development Guide](README.md)
+[TiKV Development Guide](README.md)
+
+---
 
 * [Get Started](get-started/intro.md)
   * [Build TiKV from Source](get-started/build-tikv-from-source.md)
