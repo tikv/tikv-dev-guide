@@ -1,10 +1,7 @@
 # Write and Run Unit Tests
 
 ## Add unit test cases in TiKV
-Now let's take a look at how to add unit tests to tikv
-If your modified / added code does not have a mod specifically for testing, 
-you need to create a new test module first.  
-If you already have one, skip this step.
+Now let's take a look at how to add unit tests to TiKV. If the code changes don't have a mod specifically for testing, you need to create a new test module. If you already have one, skip this step.
 
 ### Add the tests module and #[cfg(test)]
 First, add new module for unit test if the test module is not exists,
@@ -18,7 +15,6 @@ they don’t need the #[cfg(test)] annotation.
 However, because unit tests go in the same files as the code, 
 you’ll use ```#[cfg(test)]``` to specify that they shouldn’t be included in the compiled result.
 
-
 ```rust
 #[cfg(test)]
 mod tests{
@@ -26,7 +22,6 @@ mod tests{
    // write your test cases 
     
 }
-
 ```  
 
 ## Write your test case:  
